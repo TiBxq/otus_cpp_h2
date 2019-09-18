@@ -6,7 +6,7 @@ project(ip_filter VERSION 0.0.1)
 #find_package(GTest REQUIRED)
 #find_package(Threads REQUIRED)
 
-add_executable(ip_filter main.cpp)
+add_executable(ip_filter ip_filter.cpp)
 #add_executable(test_version_gtest test_version_gtest.cpp)
 
 set_target_properties(ip_filter PROPERTIES
