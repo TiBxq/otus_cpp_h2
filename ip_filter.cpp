@@ -92,7 +92,7 @@ void filter_any(const std::vector<std::vector<std::string>>& ip_pool, int byte)
 	}
 }
 
-int main(int argc, char const *argv[])
+int main(/*int argc, char const *argv[]*/)
 {
     try
     {
