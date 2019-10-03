@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 // ("",  '.') -> [""]
 // ("11", '.') -> ["11"]
@@ -30,65 +31,35 @@ std::vector<std::string> split(const std::string &str, char d)
     return r;
 }
 
-void filter(const std::vector<std::vector<std::string>>& ip_pool, int byte1)
+using IPValue = std::vector<std::string>;
+using IPList = std::vector<IPValue>;
+
+IPList filter(const IPList& ip_pool, std::function<bool(const IPValue&)> filterFunc)
 {
-	for (std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
+	IPList result;
+	for (auto ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
 	{
-		if (atoi((*ip)[0].c_str()) == byte1)
+		if (filterFunc(*ip))
 		{
-			for (std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-			{
-				if (ip_part != ip->cbegin())
-				{
-					std::cout << ".";
-				}
-				std::cout << *ip_part;
-			}
-			std::cout << std::endl;
+			result.emplace_back(*ip);
 		}
 	}
+	return result;
 }
 
-void filter(const std::vector<std::vector<std::string>>& ip_pool, int byte1, int byte2)
+void print(const IPList& ip_pool)
 {
-	for (std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
+	for (auto ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
 	{
-		if (atoi((*ip)[0].c_str()) == byte1 && atoi((*ip)[1].c_str()) == byte2)
+		for (auto ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
 		{
-			for (std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
+			if (ip_part != ip->cbegin())
 			{
-				if (ip_part != ip->cbegin())
-				{
-					std::cout << ".";
-				}
-				std::cout << *ip_part;
+				std::cout << ".";
 			}
-			std::cout << std::endl;
+			std::cout << *ip_part;
 		}
-	}
-}
-
-void filter_any(const std::vector<std::vector<std::string>>& ip_pool, int byte)
-{
-	for (std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-	{
-		bool found = std::any_of(ip->begin(), ip->end(), [byte](const std::string& ip_part )
-		{
-			return atoi(ip_part.c_str()) == byte;
-		});
-
-		if (found)
-		{
-			for (std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-			{
-				if (ip_part != ip->cbegin())
-				{
-					std::cout << ".";
-				}
-				std::cout << *ip_part;
-			}
-			std::cout << std::endl;
-		}
+		std::cout << std::endl;
 	}
 }
 
@@ -96,16 +67,16 @@ int main(/*int argc, char const *argv[]*/)
 {
     try
     {
-        std::vector<std::vector<std::string> > ip_pool;
+        IPList ip_pool;
 
         for(std::string line; std::getline(std::cin, line);)
         {
-            std::vector<std::string> v = split(line, '\t');
+            IPValue v = split(line, '\t');
             ip_pool.push_back(split(v.at(0), '.'));
         }
 
         // reverse lexicographically sort
-		std::sort(ip_pool.begin(), ip_pool.end(), [](const std::vector<std::string>& lhs, const std::vector<std::string>& rhs)
+		std::sort(ip_pool.begin(), ip_pool.end(), [](const IPValue& lhs, const IPValue& rhs)
 		{
 			for (unsigned i = 0; i < lhs.size(); ++i)
 			{
@@ -123,19 +94,7 @@ int main(/*int argc, char const *argv[]*/)
 			return false;
 		});
 
-        for(std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-        {
-            for(std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-            {
-                if (ip_part != ip->cbegin())
-                {
-                    std::cout << ".";
-
-                }
-                std::cout << *ip_part;
-            }
-            std::cout << std::endl;
-        }
+		print(ip_pool);
 
         // 222.173.235.246
         // 222.130.177.64
@@ -146,7 +105,14 @@ int main(/*int argc, char const *argv[]*/)
         // 1.1.234.8
 
         // filter by first byte and output
-		filter(ip_pool, 1);
+		{
+			int byte1 = 1;
+			auto result = filter(ip_pool, [byte1](const IPValue& ip)
+			{
+				return atoi(ip[0].c_str()) == byte1;
+			});
+			print(result);
+		}
 
         // 1.231.69.33
         // 1.87.203.225
@@ -155,8 +121,15 @@ int main(/*int argc, char const *argv[]*/)
         // 1.1.234.8
 
         // filter by first and second bytes and output
-		filter(ip_pool, 46, 70);
-		
+		{
+			int byte1 = 46;
+			int byte2 = 70;
+			auto result = filter(ip_pool, [byte1, byte2](const IPValue& ip)
+			{
+				return atoi(ip[0].c_str()) == byte1 && atoi(ip[1].c_str()) == byte2;
+			});
+			print(result);
+		}
 
         // 46.70.225.39
         // 46.70.147.26
@@ -164,7 +137,17 @@ int main(/*int argc, char const *argv[]*/)
         // 46.70.29.76
 
         // filter by any byte and output
-		filter_any(ip_pool, 46);
+		{
+			int byte = 46;
+			auto result = filter(ip_pool, [byte](const IPValue& ip)
+			{
+				return std::any_of(ip.begin(), ip.end(), [byte](const std::string& ip_part)
+				{
+					return atoi(ip_part.c_str()) == byte;
+				});
+			});
+			print(result);
+		}
 
         // 186.204.34.46
         // 186.46.222.194
