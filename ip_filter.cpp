@@ -1,10 +1,9 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
-#include <string>
-#include <vector>
 #include <algorithm>
-#include <functional>
+
+#include "ip_filter.h"
 
 // ("",  '.') -> [""]
 // ("11", '.') -> ["11"]
@@ -29,22 +28,6 @@ std::vector<std::string> split(const std::string &str, char d)
     r.push_back(str.substr(start));
 
     return r;
-}
-
-using IPValue = std::vector<std::string>;
-using IPList = std::vector<IPValue>;
-
-IPList filter(const IPList& ip_pool, std::function<bool(const IPValue&)> filterFunc)
-{
-	IPList result;
-	for (auto ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-	{
-		if (filterFunc(*ip))
-		{
-			result.emplace_back(*ip);
-		}
-	}
-	return result;
 }
 
 void print(const IPList& ip_pool)
